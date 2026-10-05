@@ -1,0 +1,123 @@
+FASE 0: Declaração de Variáveis (No Terminal do Proxmox)
+Copie e cole isso no terminal para definir os caminhos e IDs.
+
+Bash
+
+# === EDITE AQUI ===
+# ID da VM VAZIA que você vai criar manualmente (ex: 200)
+export VM_ID="200"
+
+# Nome do Storage onde os discos vão morar (ex: local-lvm)
+export TARGET_STORAGE="local-lvm"
+
+# Caminho COMPLETO dos arquivos .vmdk que você subiu (Fase de Transporte)
+# DICA: Use 'ls -lh /root/migracao_temp/' para pegar os nomes exatos
+export DISCO_C_PATH="/root/migracao_temp/SeuServer-disk1.vmdk"
+export DISCO_DADOS_PATH="/root/migracao_temp/SeuServer-disk2.vmdk"
+# ==================
+🏗️ FASE 1: Criar a VM Vazia (A Casca) - MANUALMENTE NA GUI
+Aqui garantimos a configuração base antes de tocar nos dados.
+
+No Proxmox, clique em Create VM.
+
+General:
+
+Node: Seu nó.
+
+VM ID: Digite o número que definimos na variável $VM_ID (ex: 200).
+
+Name: Server-Migracao-Teste.
+
+OS:
+
+Selecione Microsoft Windows. Version: Escolha a versão do seu server.
+
+System:
+
+Deixe o padrão (Graphic card, Machine q35, BIOS OMVF/SeaBIOS igual ao original).
+
+IMPORTANTE: Marque "Qemu Agent".
+
+Disks:
+
+🗑️ APAGUE O DISCO PADRÃO: Clique no ícone de lixeira no disco scsi0 (32GB).
+
+A VM DEVE FICAR SEM DISCO NENHUM NESTA TELA.
+
+CPU / Memory: Configure igual ao servidor original (ex: 4 Cores, 8GB RAM).
+
+Network:
+
+Model: Intel E1000.
+
+🔴 Desmarque "Start at boot".
+
+🔴 Disconnect (Se for Dry Run).
+
+Confirm: Clique em Finish.
+
+Resultado: Você tem uma VM (ID 200) parada e sem disco nenhum.
+
+💉 FASE 2: Injeção dos Discos (No Terminal do Proxmox)
+Agora usamos o comando qm importdisk para pegar aquele arquivo vmdk solto e jogar para dentro da VM vazia que você acabou de criar.
+
+Rode este bloco no terminal (as variáveis já devem estar carregadas da Fase 0):
+
+Bash
+
+echo "--- Importando Disco C (Sistema) para a VM $VM_ID no storage $TARGET_STORAGE ---"
+qm importdisk $VM_ID "$DISCO_C_PATH" $TARGET_STORAGE --format qcow2
+
+echo "--- Importando Disco D (Dados) para a VM $VM_ID no storage $TARGET_STORAGE ---"
+qm importdisk $VM_ID "$DISCO_DADOS_PATH" $TARGET_STORAGE --format qcow2
+
+echo "--- Importação Concluída. Vá para a aba Hardware da VM. ---"
+Aguarde chegar em 100% em ambos.
+
+🔧 FASE 3: Attach e Preparação (Na GUI do Proxmox)
+Os discos entraram na VM, mas estão "soltos" (Unused).
+
+Vá na VM 200 > Hardware.
+
+Você verá Unused Disk 0 e Unused Disk 1.
+
+Attach Disco C:
+
+Dê duplo clique no disco que corresponde ao sistema (geralmente o 0).
+
+Bus/Device: SATA (Para garantir compatibilidade no boot).
+
+Click Add.
+
+Attach Disco Dados:
+
+Dê duplo clique no outro disco Unused.
+
+Bus/Device: SATA.
+
+Click Add.
+
+Adicionar ISO e Isca:
+
+CD/DVD: Carregue a virtio-win.iso.
+
+Add > Hard Disk (O tal disco isca):
+
+Size: 1 GB.
+
+Bus: SCSI.
+
+Controller (em Options): VirtIO SCSI.
+
+🚀 FASE 4 em diante (Segue o roteiro anterior)
+Agora a VM está montada. Daqui para frente é o processo que já alinhamos:
+
+Boot Order: SATA (C:) em primeiro.
+
+Boot: Instalar drivers no Windows (graças ao disco isca SCSI).
+
+Shutdown.
+
+Virada de Chave: Remover isca, mudar C: e Dados de SATA para SCSI (SSD/Discard).
+
+Boot Final.

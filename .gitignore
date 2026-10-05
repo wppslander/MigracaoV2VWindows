@@ -1,0 +1,26 @@
+# Logs
+*.log
+/tmp/
+
+# Ambientes e credenciais locais
+.env
+.env.*
+*.key
+*.pem
+id_rsa*
+id_ed25519*
+
+# Arquivos temporários e de editores
+*~
+*.swp
+*.bak
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ISOs e imagens de disco grandes (se baixadas localmente)
+*.iso
+*.vmdk
+*.raw
+*.qcow2

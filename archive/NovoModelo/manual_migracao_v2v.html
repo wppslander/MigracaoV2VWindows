@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Migração V2V: VMware para Proxmox (Windows)</title>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --bg-color: #f4f6f9;
+            --text-color: #333;
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --var-color: #9cdcfe;
+            --cmd-color: #ce9178;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #444;
+            margin-top: 25px;
+        }
+
+        .checklist-box {
+            background-color: #fff0f0;
+            border: 2px solid var(--danger-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .checklist-title {
+            color: var(--danger-color);
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .checklist-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .checklist-item input {
+            margin-right: 10px;
+            transform: scale(1.5);
+            margin-top: 5px;
+        }
+
+        .cmd-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow-x: auto;
+            margin-top: 10px;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .cmd-block code {
+            display: block;
+            white-space: pre;
+        }
+
+        .var {
+            color: var(--var-color);
+        }
+
+        .str {
+            color: var(--cmd-color);
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .phase-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 40px;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        .danger-box {
+            background-color: #f8d7da;
+            border-left: 5px solid var(--danger-color);
+            padding: 15px;
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            color: #856404;
+        }
+
+        .tool-icon {
+            display: inline-block;
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Manual de Migração V2V: VMware &rarr; Proxmox</h1>
+
+        <div class="checklist-box">
+            <div class="checklist-title">🚨 CHECKLIST CRÍTICO (Antes de começar)</div>
+            <div class="checklist-item"><input type="checkbox"> <strong>Snapshots:</strong> "Delete All" no VMware.
+                Obrigatório.</div>
+            <div class="checklist-item"><input type="checkbox"> <strong>BitLocker:</strong> Desativado/Decriptado.</div>
+            <div class="checklist-item"><input type="checkbox"> <strong>Espaço:</strong> Storage do Proxmox tem espaço
+                livre > tamanho dos discos?</div>
+            <div class="checklist-item"><input type="checkbox"> <strong>VM Desligada:</strong> A VM de origem está OFF?
+            </div>
+        </div>
+
+        <!-- FASE 1 -->
+        <div class="phase-header">FASE 1: Transporte dos Arquivos</div>
+        <div class="step-box">
+            <p>Transfira os arquivos exportados (<code>.ovf</code> e <code>.vmdk</code>) para o servidor Proxmox.</p>
+
+            <div class="warning-box">
+                <strong>Destino Obrigatório:</strong> Os arquivos devem ser colocados na pasta:
+                <br>
+                <code>/root/migracao_temp/</code>
+            </div>
+
+            <h3>Escolha seu método de transferência:</h3>
+
+            <p><span class="tool-icon">Opção A: Terminal (Rsync/SCP)</span> Recomendado para grandes volumes.</p>
+            <div class="cmd-block">
+                <code><span class="comment"># Exemplo usando Rsync (Executar da máquina de origem ou local)</span>
+rsync -avhP /origem/arquivos/*.vmdk root@&lt;IP_PROXMOX&gt;:/root/migracao_temp/</code>
+            </div>
+
+            <p style="margin-top: 20px;"><span class="tool-icon">Opção B: Interface Gráfica</span></p>
+            <ul>
+                <li>Use <strong>WinSCP</strong> ou <strong>FileZilla</strong>.</li>
+                <li>Conecte via SFTP (Porta 22).</li>
+                <li>Arraste os arquivos para <code>/root/migracao_temp/</code>.</li>
+            </ul>
+        </div>
+
+        <!-- FASE 2 -->
+        <div class="phase-header">FASE 2: Criação da VM (Proxmox GUI)</div>
+        <div class="step-box">
+            <ul>
+                <li><strong>Create VM:</strong> ID: <code>200</code> | Name: <code>SRV-MIGRACAO</code></li>
+                <li><strong>OS:</strong> Windows (Versão correta).</li>
+                <li><strong>System:</strong> ✅ Qemu Agent.</li>
+                <li><strong>Disks:</strong> 🗑️ <strong>DELETE</strong> o disco padrão (scsi0). Deixe VAZIO.</li>
+                <li><strong>CPU:</strong> Type: <strong>Host</strong>.</li>
+                <li><strong>Network:</strong> Intel E1000.</li>
+            </ul>
+        </div>
+
+        <!-- FASE 3 -->
+        <div class="phase-header">FASE 3: Importação Automática (Terminal)</div>
+        <div class="step-box">
+            <p>Utilize o script <code>import_vmdk.sh</code> fornecido junto com esta documentação para evitar erros de
+                comando.</p>
+
+            <h3>Execução:</h3>
+            <div class="cmd-block">
+                <code><span class="comment"># Dê permissão de execução</span>
+chmod +x import_vmdk.sh
+
+<span class="comment"># Execute</span>
+./import_vmdk.sh</code>
+            </div>
+            <p>Siga os prompts de texto no seu terminal para inserir o ID da VM de destino e escolher o disco VMDK
+                correto para a importação. Repita a execução para eventuais discos adicionais.</p>
+        </div>
+
+        <!-- FASE 4 -->
+        <div class="phase-header">FASE 4: Estratégia "Isca" (GUI)</div>
+        <div class="step-box">
+            <ol>
+                <li><strong>Hardware:</strong> Dê Attach nos discos <em>Unused</em> como <strong>SATA</strong>.</li>
+                <li><strong>Isca:</strong> Adicione um novo disco de <strong>1GB</strong> como <strong>SCSI</strong>
+                    (VirtIO SCSI).</li>
+                <li><strong>ISO:</strong> Monte o <code>virtio-win.iso</code>.</li>
+                <li><strong>Boot:</strong> Garanta que <strong>SATA0</strong> é o primeiro boot.</li>
+            </ol>
+        </div>
+
+        <!-- FASE 5 e 6 -->
+        <div class="phase-header">FASES FINAIS: Drivers & Virada</div>
+        <div class="step-box">
+            <ol>
+                <li>Ligue a VM &rarr; Instale drivers do CD VirtIO (Storage Controller).</li>
+                <li>Valide no Gerenciador de Dispositivos (Red Hat VirtIO SCSI).</li>
+                <li>Desligue a VM.</li>
+                <li><strong>Virada de Chave:</strong>
+                    <ul>
+                        <li>Remova o disco de 1GB.</li>
+                        <li>Detach SATA &rarr; Attach <strong>SCSI</strong> (SSD Emulation + Discard).</li>
+                        <li>Rede: Intel E1000 &rarr; <strong>VirtIO</strong>.</li>
+                    </ul>
+                </li>
+                <li><strong>Limpeza Automatizada:</strong> Ligue a VM. Execute o script nativo
+                    <code>post_migration_cleanup.ps1</code> como PowerShell <strong>Admin</strong>. Siga as instruções
+                    listadas na tela do console exibido para remover os adaptadores antigos (ocultos) e liberar o IP
+                    antigo para sua nova interface VirtIO.</li>
+                <li><strong>Opcional Final:</strong> Desinstale o software VMware Tools pelo Painel de Controle.</li>
+            </ol>
+        </div>
+    </div>
+</body>
+
+</html>

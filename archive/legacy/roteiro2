@@ -1,0 +1,193 @@
+PLAYBOOK MESTRE: Migração Windows Server (VMware p/ Proxmox)
+Premissas de Segurança:
+
+A VM original na VMware permanece desligada e intacta.
+
+Trabalhamos apenas com cópias (arquivos exportados).
+
+O procedimento deve ser validado em Dry Run (rede desconectada) antes da produção.
+
+🛠️ FASE 0: Preparação e Arquivos (Antes da Janela)
+ISO VirtIO:
+
+Baixe a ISO estável: Link Oficial
+
+Faça upload para o Proxmox (Storage local > ISO Images).
+
+Inventário de Rede (Produção):
+
+No Windows atual, rode ipconfig /all e salve IP, Máscara, Gateway e DNS.
+
+Motivo: A placa de rede mudará, o Windows perderá a configuração de IP estático.
+
+📦 FASE 1: Exportação e Transporte (Na VMware)
+Shutdown: Desligue a VM na VMware.
+
+Export: File > Export > Export OVF Template.
+
+Formato: OVF (Gera arquivo .ovf descritor e arquivos .vmdk de dados).
+
+Local: Salve no seu computador de gerenciamento.
+
+Transporte (PC -> Proxmox):
+
+Use WinSCP ou terminal para enviar a pasta exportada para /root/migracao_temp/ no Proxmox.
+
+🏗️ FASE 2: Criar a "Casca" da VM (Proxmox GUI)
+Aqui criamos a VM vazia com as specs corretas, sem disco.
+
+Acesse o Proxmox > Create VM.
+
+General:
+
+VM ID: Defina seu ID (ex: 200 para teste, 100 para prod).
+
+Name: SRV-WIN-MIGRATION.
+
+OS: Microsoft Windows (Selecione a versão correta, ex: 2019/2022).
+
+System:
+
+Machine: i440fx ou q35 (Mantenha o padrão sugerido).
+
+Qemu Agent: ✅ Marque esta opção.
+
+Disks:
+
+🗑️ AÇÃO CRÍTICA: Clique na lixeira para remover o disco padrão scsi0 de 32GB.
+
+A lista de discos deve ficar vazia.
+
+CPU/Memory: Configure igual ao servidor original (Cores/RAM).
+
+Network:
+
+Model: Intel E1000 (Compatibilidade máxima).
+
+🔴 Disconnect: Marque esta opção (Para o Dry Run).
+
+Confirm: Finish.
+
+💉 FASE 3: Injeção dos Discos (Proxmox Terminal)
+Importamos os arquivos vmdk para dentro da VM vazia.
+
+Acesse o Shell do Proxmox.
+
+Defina as Variáveis (Copie, edite e cole):
+
+Bash
+
+# === EDITE ESTES VALORES ===
+export VM_ID="200"                     # O ID da VM vazia que você criou
+export STORAGE="local-lvm"             # O storage destino (pvesm status para ver nomes)
+
+# Use 'ls /root/migracao_temp/' para pegar os nomes exatos dos arquivos
+export PATH_C="/root/migracao_temp/NomeDaSuaVM-disk1.vmdk"   # Caminho do Disco de Sistema
+export PATH_D="/root/migracao_temp/NomeDaSuaVM-disk2.vmdk"   # Caminho do Disco de Dados
+# ===========================
+Execute a Importação:
+
+Bash
+
+echo "--- Importando Disco C para VM $VM_ID ---"
+qm importdisk $VM_ID "$PATH_C" $STORAGE --format qcow2
+
+echo "--- Importando Disco D para VM $VM_ID ---"
+qm importdisk $VM_ID "$PATH_D" $STORAGE --format qcow2
+
+echo "--- Concluído. Verifique na aba Hardware. ---"
+🔧 FASE 4: Montagem "Modo Compatibilidade" (Proxmox GUI)
+O Windows ainda não tem driver VirtIO. Configuramos como SATA para garantir o boot.
+
+Vá em VM 200 > Hardware.
+
+Você verá dois discos Unused Disk 0 e Unused Disk 1.
+
+Attach Disco C (Sistema):
+
+Duplo clique no disco correspondente ao C:.
+
+Bus/Device: SATA (0).
+
+Click Add.
+
+Attach Disco D (Dados):
+
+Duplo clique no disco de dados.
+
+Bus/Device: SATA (1).
+
+Click Add.
+
+Preparar Instalação de Drivers:
+
+CD/DVD: Carregue a ISO virtio-win.iso.
+
+Add > Hard Disk (O "Disco Isca"):
+
+Size: 1 GB.
+
+Bus: SCSI.
+
+Atenção: Vá na aba Options da VM e garanta que "SCSI Controller" é VirtIO SCSI.
+
+Boot Order (Options):
+
+Edite e habilite o SATA0 como primeiro dispositivo de boot.
+
+💿 FASE 5: Instalação de Drivers (Dentro do Windows)
+Ligue a VM (Start) e abra o Console.
+
+O Windows vai subir (lento, pois é SATA/E1000). Faça login.
+
+Acesse o CD Drive (VirtIO).
+
+Execute virtio-win-gt-x64.msi e avance até o fim.
+
+Validação Crítica:
+
+Abra o Gerenciador de Dispositivos.
+
+Expanda "Controladores de Armazenamento" (Storage Controllers).
+
+Confirme se o "Red Hat VirtIO SCSI controller" está listado e sem erro (Ele apareceu por causa do disco isca de 1GB).
+
+Desligue a VM (Shutdown).
+
+🚀 FASE 6: A Virada de Chave (Performance Final)
+O Windows já conhece o driver. Agora mudamos o hardware para alto desempenho.
+
+No Proxmox > Hardware:
+
+Remova o Isca: Selecione o disco de 1GB > Detach > Remove.
+
+Disco C: Selecione > Detach.
+
+Edite o "Unused Disk 0": Mude Bus para SCSI.
+
+Marque SSD Emulation e Discard. Clique Add.
+
+Disco D: Selecione > Detach.
+
+Edite o "Unused Disk 1": Mude Bus para SCSI.
+
+Marque SSD Emulation e Discard. Clique Add.
+
+Rede: Selecione a Network Device > Edit > Mude Model para VirtIO (paravirtualized).
+
+(Se for o dia da Produção: Desmarque o "Disconnect").
+
+Boot Order (Options):
+
+Garanta que scsi0 (C:) está habilitado e em primeiro lugar.
+
+✅ FASE 7: Validação e Limpeza Final
+Ligue a VM. O boot deve ser rápido.
+
+Rede: Configure o IP Fixo novamente (painel de controle de rede).
+
+Discos: Verifique se C: e D: estão acessíveis.
+
+Limpeza: Desinstale o VMware Tools pelo Painel de Controle.
+
+FIM DO PROCESSO.
