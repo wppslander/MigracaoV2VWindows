@@ -93,6 +93,17 @@ Este documento registra a jornada real, detalhando cada obstáculo ("as mazelas 
 
 ---
 
+### 🧪 7. 🛡️ Marco #7: A Prova dos 9 — O Dry-Run & Soak Test de 72 Horas sem Rede
+* **O Cenário:** A maior armadilha em migrações V2V é tentar o go-live "na coragem" sem validação prévia de longevidade, gerando riscos de *split-brain* no Active Directory ou travamentos por *memory leak* em novos drivers.
+* **A Solução de Engenharia:** Antes da janela de corte oficial, foi realizado um **Dry-Run Completo**:
+  1. A imagem completa do servidor de 700 GB foi clonada para o Proxmox VE.
+  2. O servidor foi inicializado de forma 100% isolada (`link_down=1` na interface `net0`).
+  3. A VM operou continuamente por **3 dias inteiros (72 horas de Soak Test)** em console fechado.
+* **O Resultado:** Validação empírica de estabilidade de kernel, monitoramento de Event Viewer livre de erros de hardware e comprovação absoluta de que o barramento VirtIO SCSI não apresentaria instabilidade a médio prazo. Quando a virada oficial aconteceu, o risco já era virtualmente zero.
+
+---
+
+
 ## 🏆 Conclusão & Lições Aprendidas
 
 1. **Ferramentas de Baixo Nível Superam Abstrações de Interface:** O uso de `cat` + `dd` via SSH direto garantiu a transferência de 700 GB sem falhar uma única vez por *timeout*.

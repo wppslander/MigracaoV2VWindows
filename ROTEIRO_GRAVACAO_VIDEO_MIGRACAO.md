@@ -85,9 +85,14 @@
   > ```  
   > *Isso força o Windows a carregar o driver VirtIO SCSI no momento em que o kernel acorda.  
   > Depois disso, é só desligar, alterar no Proxmox de `sata0` para **`scsi0`** com **SSD emulation**, e ligar de novo.*  
-  > *O Windows inicializa em segundos, com performance para-virtualizada máxima e suporte a TRIM no ZFS!"*
+  > *O Windows inicializa em segundos, com performance para-virtualizada máxima e suporte a TRIM no ZFS!*  
+  >  
+  > *Mas atenção: **eu não fui direto para a virada de produção**. Aqui está a maior prova de senioridade: antes do corte definitivo, eu fiz um **Dry-Run Completo**.*  
+  > *Eu peguei essa imagem clonada e deixei a máquina rodando no Proxmox **'seca', sem rede nenhuma (link_down=1), por 3 dias inteiros (72 horas de soak test)**.*  
+  > *Por que sem rede? Primeiro: se você ligar uma cópia do Windows Server na rede com o original ligado, você causa um desastre no Active Directory, quebra os segredos Kerberos da conta de máquina e derruba o domínio corporativo. Segundo: rodando isolado por 3 dias, pude monitorar o Event Viewer, verificar estabilidade dos drivers VirtIO e ter 100% de certeza de que não havia memory leak. Foi isso que transformou o go-live final em um passeio!"*
 
 ---
+
 
 ### 🔑 Bloco 5: A Mazela do Code 31 e os Certificados Red Hat `[07:30 - 08:45]`
 * **O que mostrar na tela:** O CD da ISO VirtIO destacando o `virtio-win-guest-tools.exe` versus as pastas manuais de drivers `.inf`.
