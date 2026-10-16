@@ -57,20 +57,14 @@ flowchart LR
 ## 📂 Estrutura do Repositório
 
 ```text
-├── PLAYBOOK_MIGRACAO_V2V.md      # Guia rápido e operacional passo a passo com índice
-├── MANUAL_UNIFICADO_MIGRACAO_V2V.md # Manual técnico detalhado e padrões de arquitetura
-├── JORNADA_E_CASE_MIGRACAO_V2V.md   # Relato de caso, desafios (mazelas) e diagnósticos
-├── ROADMAP_MIGRACAO_V2V_LINKEDIN.md # Linha do tempo, diagramas e modelo de case para LinkedIn
-├── ROTEIRO_GRAVACAO_VIDEO_MIGRACAO.md # Roteiro estruturado para gravação de vídeo técnico / Tech Talk
-├── TODO.md                          # Histórico de homologação e checklist do go-live
-
-├── credentials.env.example         # Modelo seguro de variáveis/credenciais CIFS (sem segredos)
-├── sync_marketing.sh                # Script de cópia prévia de segurança (CIFS + rsync)
-├── restore_marketing.sh             # Script de restauração pós-formatação (CIFS + rsync)
-├── .agents/                         # Instruções e contexto para agentes inteligentes
-│   ├── AGENTS.md
-│   └── GEMINI.md
-└── archive/                         # Rascunhos, scripts e documentações legadas
+.
+├── README.md                 # Visão geral, arquitetura e introdução
+├── PLAYBOOK_MIGRACAO_V2V.md # Manual operacional completo passo a passo (Fase 0 a 8 + Troubleshooting)
+├── sync_marketing.sh         # Script de sincronização prévia de segurança (CIFS + rsync)
+├── restore_marketing.sh      # Script de restauração de dados para nova unidade (CIFS + rsync)
+├── credentials.env.example  # Exemplo seguro de arquivo de credenciais
+├── .agents/                  # Contexto e regras dos agentes inteligentes
+└── antigo/                   # Arquivos históricos, rascunhos e legados (ignorado no git)
 ```
 
 

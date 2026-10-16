@@ -24,3 +24,7 @@ Thumbs.db
 *.vmdk
 *.raw
 *.qcow2
+
+# Documentos e rascunhos antigos/descontinuados
+/antigo/
+antigo/

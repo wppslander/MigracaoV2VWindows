@@ -4,12 +4,11 @@ Este diretório contém a documentação operacional padronizada para migração
 
 ## 📚 Documentação Mestre Oficial
 
-A documentação foi consolidada e revisada para garantir total segurança, repetibilidade e clareza. Utilize os arquivos mestre abaixo como referência:
+A documentação foi consolidada e simplificada. Utilize os arquivos abaixo como referência:
 
-* **`PLAYBOOK_MIGRACAO_V2V.md`**: O playbook operacional prático e direto com índice dos passos para replicação imediata do processo.
-* **`MANUAL_UNIFICADO_MIGRACAO_V2V.md`**: O manual técnico unificado completo e definitivo. Contém todos os procedimentos de pré-migração, streaming de disco por SSH (`cat` + `dd`), injeção de drivers VirtIO via executável, ajustes de boot UEFI, preservação do MAC Address e limpeza de rede.
-* **`JORNADA_E_CASE_MIGRACAO_V2V.md`**: O relato de caso detalhado registrando cada desafio técnico ("mazela"), diagnósticos de causa raiz e soluções aplicadas na migração do servidor `rdp`.
-* **`ROADMAP_MIGRACAO_V2V_LINKEDIN.md`**: A linha do tempo completa do projeto com diagramas de arquitetura, marcos finalizados e modelo de post para redes sociais.
+* **`README.md`**: Visão executiva, arquitetura, scripts e guia de alto nível.
+* **`PLAYBOOK_MIGRACAO_V2V.md`**: O guia operacional definitivo completo (Passos 0 a 8 + Matriz de Troubleshooting).
+* **`sync_marketing.sh` / `restore_marketing.sh`**: Scripts de suporte para movimentação e sincronização dos volumes de dados.
 
 ---
 
@@ -31,4 +30,4 @@ Todo procedimento de migração V2V deve respeitar rigorosamente os seguintes po
 ---
 
 ## 📁 Arquivos Antigos e Históricos
-Todos os rascunhos anteriores e arquivos legado (`legacy/`, `NovoModelo/`, `PlanoDeMigracao*.md`, `ROTEIRO_FINAL_MIGRACAO_RDP.md`) foram organizados no diretório **`archive/`**, mantendo a raiz do projeto limpa e focada.
+Todos os rascunhos, relatos de caso, scripts legados e materiais acessórios foram consolidados na pasta **`antigo/`** (ignorada no git), mantendo a raiz do projeto estritamente focada na operação.

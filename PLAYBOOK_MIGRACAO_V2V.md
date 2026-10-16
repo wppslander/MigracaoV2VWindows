@@ -8,7 +8,7 @@
 
 ## 📑 Índice dos Passos
 
-1. [Fase 0: Pré-Requisitos na Origem (Product Key, Sincronização Marketing & Shutdown)](#-passo-0-pré-requisitos-e-salvaguardas-na-origem)
+1. [Fase 0: Pré-Requisitos na Origem (Product Key, Marketing, SSH Keys & Shutdown)](#-passo-0-pré-requisitos-e-salvaguardas-na-origem)
 2. [Fase 1: Provisionamento da VM no Proxmox VE](#-passo-1-provisionamento-da-vm-no-proxmox-ve)
 3. [Fase 2: Streaming de Dados em Bloco via SSH (106 MB/s)](#-passo-2-streaming-de-dados-em-bloco-via-ssh)
 4. [Fase 3: Primeiro Boot Seguro sob Barramento SATA0](#-passo-3-primeiro-boot-seguro-sob-barramento-sata0)
@@ -18,6 +18,7 @@
 8. [Fase 7: Pós-Boot SCSI, Formatação do Marketing, Carga dos Dados e Rede](#-passo-7-pós-boot-scsi-limpeza-de-rede-e-ativação-de-licença)
 9. [Fase 8: Homologação e Checklist Final](#-passo-8-homologação-e-checklist-final)
 10. [Plano de Contingência e Rollback Imediato](#-plano-de-contingência-e-rollback-imediato)
+11. [Matriz de Resolução de Problemas (Troubleshooting)](#-matriz-de-resolução-de-problemas-troubleshooting)
 
 ---
 
@@ -48,7 +49,22 @@ Execute no Proxmox VE (`10.1.50.212`):
   - MAC Address oficial da VM (ex: `00:0C:29:05:98:75`)
   - Configurações IP (ex: `10.1.50.14/24`, Gateway `10.1.50.1`, DNS `10.1.50.1`)
 
-### 0.4 Desligamento Limpo da VM de Origem
+### 0.4 Configurar Chaves SSH sem Senha (Proxmox ➔ ESXi)
+O streaming de disco de alta velocidade exige comunicação direta SSH sem interrupção de senha:
+1. No Proxmox VE (`10.1.50.212`), gere a chave se ainda não existir:
+   ```bash
+   ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+   ```
+2. Instale a chave pública no VMware ESXi 7.0 (`10.1.50.252`):
+   ```bash
+   cat ~/.ssh/id_ed25519.pub | ssh root@10.1.50.252 "cat >> /etc/ssh/keys-root/authorized_keys"
+   ```
+3. Valide o acesso sem senha:
+   ```bash
+   ssh root@10.1.50.252 "esxcli system version get"
+   ```
+
+### 0.5 Desligamento Limpo da VM de Origem
 Após finalizar a sincronização do marketing e a cópia dos dados:
 No Windows da origem:
 ```cmd
@@ -299,3 +315,16 @@ Se ocorrer qualquer imprevisto grave durante o processo:
 2. **Rollback total para o VMware ESXi:**
    - Desligar a VM 104 no Proxmox (`qm stop 104`).
    - Ligar novamente a VM `rdp` original no ESXi (`10.1.50.252`). Como o disco da origem permaneceu 100% intocado (apenas lido via `cat`), a VM original volta a produzir imediatamente.
+
+---
+
+## 🛡️ Matriz de Resolução de Problemas (Troubleshooting)
+
+| Erro / Sintoma | Causa Raiz | Solução Testada & Validada |
+| :--- | :--- | :--- |
+| **Reativação de Licença Solicitada** | Mudança no identificador de hardware virtual (Q35/VirtIO). | Executar no CMD Admin: `slmgr.vbs /ipk <CHAVE>` e `slmgr.vbs /ato`. |
+| **Timeout de I/O na API/Import do Proxmox** | Limite de tempo em arquivos VMDK >500 GB via FUSE/HTTP. | Streaming assíncrono direto via SSH: `ssh cat ... \| dd of=/dev/zvol/... bs=1M`. |
+| **Driver VirtIO com Code 31** | Ausência dos certificados de assinatura Red Hat no Windows 2016. | Executar o instalador completo **`virtio-win-guest-tools.exe`** da raiz do CD. |
+| **INACCESSIBLE_BOOT_DEVICE (BSOD)** | Driver `vioscsi` com `Start=3` (Demand) em vez de `0` (Boot). | Manter em `sata0` provisório, rodar `sc config vioscsi start= boot` e depois virar para `scsi0`. |
+| **Loop no UEFI Interactive Shell v2.2** | NVRAM (`efidisk0`) reteve ponteiros antigos da topologia VMware. | Resetar o disco EFI (`qm set 104 --delete efidisk0 ...`) ou digitar `FS0:\EFI\Boot\bootx64.efi`. |
+| **Conflito de IP e Hardware Fantasma** | Adaptador Intel esmaecido do VMware retendo o IP corporativo. | Habilitar `devmgr_show_nonpresent_devices=1`, desinstalar placa oculta e aplicar IP na VirtIO. |

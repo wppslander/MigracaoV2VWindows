@@ -23,13 +23,11 @@ Migração operacional de servidor Windows RDP do ambiente **VMware ESXi** para 
 
 ## 📄 Arquivos de Referência do Projeto
 * `README.md`: Visão executiva, arquitetura, scripts e guia rápido do repositório.
-* `PLAYBOOK_MIGRACAO_V2V.md`: Playbook operacional passo a passo com índice, pronto para replicação.
-* `MANUAL_UNIFICADO_MIGRACAO_V2V.md`: Guia mestre definitivo de execução técnica e arquitetura.
-* `JORNADA_E_CASE_MIGRACAO_V2V.md`: Relato completo de caso, mazelas e soluções consolidadas.
-* `ROADMAP_MIGRACAO_V2V_LINKEDIN.md`: Diagramas e case para redes sociais.
-* `TODO.md`: Histórico de execução, homologação e go-live finalizado.
+* `PLAYBOOK_MIGRACAO_V2V.md`: Playbook operacional consolidado passo a passo com troubleshooting, pronto para replicação.
 * `sync_marketing.sh`: Script operacional de montagem CIFS e rsync incremental do marketing.
 * `restore_marketing.sh`: Script operacional de restauração dos dados para o novo volume do Windows.
+* `credentials.env.example`: Modelo de variáveis/credenciais.
+* `antigo/`: Diretório contendo documentação histórica, relatos de caso e legados (ignorado pelo git).
 
 ---
 
